@@ -6,6 +6,7 @@ const connectDB = require('./config/database');
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const exchangeRoutes = require('./routes/exchange');
 
 // load environment variable
 dotenv.config();
@@ -28,6 +29,7 @@ app.get('/', (req,res) => {
 
 // API Routes
 app.use('/api/auth',authRoutes);
+app.use('/api/exchange', exchangeRoutes)
 
 const PORT = process.env.PORT || 5000
 
