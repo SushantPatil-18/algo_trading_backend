@@ -69,7 +69,7 @@ const addExchangeAccount = async (req, res) => {
         if(error.code === 11000){
             return res.status(400).json({
                 success: false,
-                message: 'An acccunt with this exchange and label already exists'
+                message: 'An acccount with this exchange and label already exists'
             });
         }
         res.status(500).json({
@@ -92,7 +92,7 @@ const getExchangeAccounts = async (req, res) =>{
         });
     }catch(error){
         console.error('Get exchange accounts error: ', error);
-        res.statu(500).json({
+        res.status(500).json({
             success: false,
             message: 'Server error while fetching accounts'
         });
@@ -106,7 +106,7 @@ const testExchangeConnection = async (exchange, apiKey, apiSecret, testnet = fal
             apiKey,
             secret: apiSecret,
             sandbox: testnet,
-            enbleRateLimit: true
+            enableRateLimit: true
         };
 
         // Initialize exchange based on type
@@ -123,7 +123,7 @@ const testExchangeConnection = async (exchange, apiKey, apiSecret, testnet = fal
         }else if (exchange === 'delta'){
             exchangeClass = ccxt.delta;
             if(testnet){
-                exchangeConfig = {
+                exchangeConfig.urls = {
                     api:{
                         public: 'https://testnet-api.delta.exchange',
                         private: 'https://testnet-api.delta.exchange'
