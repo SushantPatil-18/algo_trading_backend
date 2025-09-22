@@ -8,8 +8,10 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const exchangeRoutes = require('./routes/exchange');
 const strategyRoutes = require('./routes/strategy');
+const botRouter = require('./routes/bot');
+const dashboardRouter = require('./routes/dashboard');
 
-// load environment variable
+// load environment variables
 dotenv.config();
 
 // connect to database
@@ -31,7 +33,9 @@ app.get('/', (req,res) => {
 // API Routes
 app.use('/api/auth',authRoutes);
 app.use('/api/exchange', exchangeRoutes);
-app.use('/api/strategies',strategyRoutes)
+app.use('/api/strategies',strategyRoutes);
+app.use('/api/bots', botRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 const PORT = process.env.PORT || 5000
 
