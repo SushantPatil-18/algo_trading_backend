@@ -6,6 +6,7 @@ const SMAStrategy = require('../strategies/smaStrategy');
 const RSIStrategy = require('../strategies/rsiStrategy');
 const GridStrategy = require('../strategies/GridStrategy');
 const DCAStrategy = require('../strategies/dcaStrategy');
+const TradeMonitor = require('./tradeMonitor');
 
 class StrategyEngine {
     constructor(){
@@ -122,16 +123,16 @@ class StrategyEngine {
                     decision = await this.executeGridStrategy(bot, ticker, balance, exchange);
                     break;
                 case 'DCA (Dollar Cost Averaging)':
-                    decision = await this.executeDCAStrategy(bot, ticker, balance)
+                    decision = await this.executeDCAStrategy(bot, ticker, balance);
                     break;
                 default: 
-                    console.log(`Unknown strategy: ${strategyName}`)
+                    console.log(`Unknown strategy: ${strategyName}`);
                     return;
             }
 
             // Execute the trading decision
             if(decision && decision.action !== 'hold'){
-                await this.executeTrade(bot, decision, exchange)
+                await this.executeTrade(bot, decision, exchange);
             }
 
             // Update bot performance
@@ -194,6 +195,13 @@ class StrategyEngine {
 
             await trade.save();
             console.log(`Trade saved: ${trade._id}`);
+
+            // Monitor pending trades
+            if (trade.status === 'pending'){
+                setTimeout(async () => {
+                    await TradeMonitor.monitorTrade(trade, exchange);
+                }, 30000); // check after 30 seconds
+            }
 
             return order;
         }catch(error){
