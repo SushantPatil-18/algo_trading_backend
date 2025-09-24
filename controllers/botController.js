@@ -4,6 +4,10 @@ const Strategy = require('../models/Strategy');
 const {decrypt} = require('../utils/encryption');
 const ccxt = require('ccxt');
 const cron = require('node-cron');
+const StrategyEngine = require('../services/strategyEngine');
+
+// Create strategy engine instance
+const strategyEngine = new StrategyEngine();
 
 
 // Store active cron jobs
@@ -177,7 +181,7 @@ const resumeBot = async (req,res) => {
         .populate('strategyId');
 
         if(!bot){
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: 'Trading bot not found'
             });
@@ -433,13 +437,25 @@ const executeBotStrategy = async (bot) => {
     try{
         console.log(`Executing strategy for bot: ${bot.name}`);
 
-        // Update last execution time
-        await TradingBot.findByIdAndUpdate(bot._id, {
-            lastExecution: new Date()
-        });
+        // populate required fields if not already populated
+        if(!bot.strategyId || !bot.strategyId.name){
+            bot = await TradingBot.findById(bot._id)
+            .populate('strategyId')
+            .populate('exchangeAccountId');
+            
+            if(!bot){
+                throw new Error('Bot not found in database');
+            }
+            
+            if(!bot.strategyId){
+                throw new Error('Bot strategyId is null - please check bot configuration');
+            }
+        }
 
-        // TODO: Implement actual strategy execution
+        // Execute the strategy
         // This will call specific strategy files based on bot.strategyId
+        await strategyEngine.executeStrategy(bot);
+
     }catch(error){
         console.error(`Error executing strategy for bot ${bot.name}:`, error);
 
