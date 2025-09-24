@@ -5,7 +5,9 @@ const {
     getStrategiesByCategory,
     getStrategy,
     createTradingBot,
-    getTradingBots
+    getTradingBots,
+    testStrategy,
+    validateSettings
 } = require('../controllers/strategyController');
 
 const authMiddleware = require('../middleware/authMiddleware');
@@ -29,5 +31,11 @@ router.get('/:strategyId', getStrategy);
 // Trading bot routes
 router.post('/bots', createTradingBot);
 router.get('/bots/my', getTradingBots);
+
+// Test strategy
+router.post('/bots/:botId/test', testStrategy);
+
+// Validate strategy settings
+router.post('/:strategyId/validate', validateSettings);
 
 module.exports = router;

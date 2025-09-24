@@ -1,6 +1,8 @@
 const Strategy = require('../models/Strategy');
 const ExchangeAccount = require('../models/ExchangeAccount');
 const TradingBot = require('../models/TradingBot');
+const StrategyTester = require('../utils/strategyTester');
+const StrategyEngine = require('../services/strategyEngine');
 
 // Get all available strategies
 const getStrategies = async (req, res) => {
@@ -133,7 +135,7 @@ const createTradingBot = async (req,res) => {
         }
 
         // Validate strategy settings
-        const validationResult = validateStrategySetting(strategy.parameters, settings);
+        const validationResult = validateStrategySettings(strategy.parameters, settings);
         if(!validationResult.isValid){
             return res.status(400).json({
                 success: false,
@@ -205,7 +207,7 @@ const getTradingBots = async (req,res) => {
     }
 };
 
-const validateStrategySetting = (parameters, settings) => {
+const validateStrategySettings = (parameters, settings) => {
     for (const param of parameters){
         const value = settings[param.name];
 
@@ -258,12 +260,92 @@ const validateStrategySetting = (parameters, settings) => {
         isValid: true
     };
     
-}
+};
+
+// Test strategy without executing trades
+const testStrategy = async (req, res) => {
+    try{
+        const {botId} = req.params;
+        const userId = req.userId;
+
+        const bot = await TradingBot.findOne({_id: botId, userId})
+        .populate('strategyId')
+        .populate('exchangeAccountId');
+
+        if(!bot){
+            return res.status(404).json({
+                success: false,
+                message: 'Trading bot not found'
+            });
+        }
+
+        // Create strategy enginr instance
+        const strategyEngine = new StrategyEngine();
+        const exchange = await strategyEngine.getExchangeInstance(bot);
+
+        // Test the strategy
+        const testResult = await StrategyTester.testStrategy(bot, exchange);
+
+        res.json({
+            success: true,
+            bot:{
+                id: bot._id,
+                name: bot.name,
+                symbol: bot.symbol,
+                strategy: bot.strategyId.name
+            },
+            testResult
+        });
+    }catch(error){
+        console.error('Test strategy error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while testing strategy'
+        });
+    }
+};
+
+// Validate strategy settings
+const validateSettings = async(req, res) => {
+    try{
+        const {strategyId} = req.params;
+        const {settings} = req.body;
+
+        const strategy = await Strategy.findById(strategyId);
+
+        if(!strategy){
+            return res.status(404).json({
+                success: false,
+                message: 'Strategy not found'
+            });
+        }
+
+        const validationResult = validateStrategySettings(strategy.parameters, settings);
+
+        res.json({
+            success: true,
+            isValid: validationResult.isValid,
+            error: validationResult.error || null,
+            strategy: {
+                name: strategy.name,
+                parameters: strategy.parameters
+            }
+        });
+    }catch(error){
+        console.error('Validate settings error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while validating settings'
+        });
+    }
+};
 
 module.exports = {
     getStrategies,
     getStrategiesByCategory,
     getStrategy,
     createTradingBot,
-    getTradingBots
+    getTradingBots,
+    testStrategy,
+    validateSettings
 }

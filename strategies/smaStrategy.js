@@ -80,7 +80,7 @@ class SMAStrategy{
 
             if(crossover === 'death_cross' && hasPosition){
                 // Sell signal
-                const sellAmount = baseBalance * 0.95;
+                const sellAmount = baseBalance;  //***
 
                 return{
                     action: 'sell',
