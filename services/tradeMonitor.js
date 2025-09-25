@@ -1,6 +1,6 @@
 const Trade = require('../models/Trade');
 const TradingBot = require('../models/TradingBot');
-// const {sendTradeNotification} = require('./emailService');
+const emailService = require('./emailService');
 
 class TradeMonitor {
 
@@ -87,10 +87,11 @@ class TradeMonitor {
     static async notifyTradeExecution(trade, updateData){
         try{
             const bot = await TradingBot.findById(trade.botId)
-            .populate('userId', 'email name emailNotifications');
+            .populate('userId', 'email name emailNotifications')
+            .populate('strategyId', 'name')
 
             if(bot && bot.userId.emailNotifications){
-                await sendTradeNotification({
+                await emailService.sendTradeNotification({
                     email: bot.userId.email,
                     name: bot.userId.name,
                     trade: {

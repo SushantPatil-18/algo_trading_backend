@@ -1,8 +1,12 @@
+const dotenv = require('dotenv');
+
+// load environment variables FIRST
+dotenv.config();
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const connectDB = require('./config/database');
-
+const SummaryService = require('./services/summaryService');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -10,9 +14,7 @@ const exchangeRoutes = require('./routes/exchange');
 const strategyRoutes = require('./routes/strategy');
 const botRouter = require('./routes/bot');
 const dashboardRouter = require('./routes/dashboard');
-
-// load environment variables
-dotenv.config();
+const settingsRoutes = require('./routes/settings');
 
 // connect to database
 connectDB();
@@ -30,12 +32,15 @@ app.get('/', (req,res) => {
     res.json({message: 'Algo Trading API is running!'});
 });
 
+SummaryService.initDailySummary();
+
 // API Routes
 app.use('/api/auth',authRoutes);
 app.use('/api/exchange', exchangeRoutes);
 app.use('/api/strategies',strategyRoutes);
 app.use('/api/bots', botRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/settings', settingsRoutes);
 
 const PORT = process.env.PORT || 5000
 

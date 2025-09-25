@@ -5,6 +5,7 @@ const {decrypt} = require('../utils/encryption');
 const ccxt = require('ccxt');
 const cron = require('node-cron');
 const StrategyEngine = require('../services/strategyEngine');
+const emailService = require('../services/emailService');
 
 // Create strategy engine instance
 const strategyEngine = new StrategyEngine();
@@ -22,7 +23,8 @@ const startBot = async (req,res) => {
         // Find bot
         const bot = await TradingBot.findOne({_id: botId, userId})
         .populate('exchangeAccountId')
-        .populate('strategyId');
+        .populate('strategyId')
+        .populate('userId', 'email name emailNotifications');
 
         if(!bot){
             return res.status(404).json({
@@ -56,6 +58,21 @@ const startBot = async (req,res) => {
         // Start the bot execution
         await startBotExecution(bot);
 
+        // Send email notification
+        if(bot.userId.emailNotifications){
+            await emailService.sendBotStatusNotification({
+                email: bot.userId.email,
+                name: bot.userId.name,
+                bot: {
+                    name: bot.name,
+                    symbol: bot.symbol,
+                    strategy: bot.strategyId.name
+                },
+                status: 'started',
+                message: 'Your trading bot has been started successfully'
+            });
+        }
+
         res.json({
             success: true,
             message: 'Trading bot started successfully',
@@ -81,7 +98,10 @@ const stopBot = async(req,res) =>{
         const {botId} = req.params;
         const userId = req.userId;
 
-        const bot = await TradingBot.findOne({_id: botId, userId });
+        const bot = await TradingBot.findOne({_id: botId, userId })
+        .populate('exchangeAccountId')
+        .populate('strategyId')
+        .populate('userId', 'email name emailNotifications');
 
         if(!bot){
             return res.status(404).json({
@@ -104,6 +124,21 @@ const stopBot = async(req,res) =>{
         bot.status = 'stopped';
         bot.stoppedAt = new Date();
         await bot.save();
+
+        // Send email notification
+        if(bot.userId.emailNotifications){
+            await emailService.sendBotStatusNotification({
+                email: bot.userId.email,
+                name: bot.userId.name,
+                bot: {
+                    name: bot.name,
+                    symbol: bot.symbol,
+                    strategy: bot.strategyId.name
+                },
+                status: 'stopped',
+                message: 'Your trading bot has been stopped'
+            })
+        }
 
         res.json({
             success: true,
@@ -130,7 +165,10 @@ const pauseBot = async (req,res) =>{
         const {botId} = req.params;
         const userId = req.userId;
 
-        const bot = await TradingBot.findOne({_id: botId, userId });
+        const bot = await TradingBot.findOne({_id: botId, userId })
+        .populate('exchangeAccountId')
+        .populate('strategyId')
+        .populate('userId', 'email name emailNotifications');
 
         if(!bot){
             return res.status(404).json({
@@ -151,6 +189,21 @@ const pauseBot = async (req,res) =>{
 
         bot.status = 'paused';
         await bot.save();
+
+        // Send email notification
+        if(bot.userId.emailNotifications){
+            await emailService.sendBotStatusNotification({
+                email: bot.userId.email,
+                name: bot.userId.name,
+                bot: {
+                    name: bot.name,
+                    symbol: bot.symbol,
+                    strategy: bot.strategyId.name
+                },
+                status: 'paused',
+                message: 'Your trading bot has been paused'
+            })
+        }
 
         res.json({
             success: true,
@@ -178,7 +231,8 @@ const resumeBot = async (req,res) => {
 
         const bot = await TradingBot.findOne({_id: botId, userId })
         .populate('exchangeAccountId')
-        .populate('strategyId');
+        .populate('strategyId')
+        .populate('userId', 'email name emailNotifications');
 
         if(!bot){
             return res.status(404).json({
@@ -209,6 +263,21 @@ const resumeBot = async (req,res) => {
 
         // Resume bot execution
         await startBotExecution(bot);
+
+        // Send email notification
+        if(bot.userId.emailNotifications){
+            await emailService.sendBotStatusNotification({
+                email: bot.userId.email,
+                name: bot.userId.name,
+                bot: {
+                    name: bot.name,
+                    symbol: bot.symbol,
+                    strategy: bot.strategyId.name
+                },
+                status: 'resumed',
+                message: 'Your trading bot has been resumed'
+            })
+        }
 
         res.json({
             success: true,
