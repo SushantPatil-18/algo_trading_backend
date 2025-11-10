@@ -22,29 +22,8 @@ connectDB();
 
 const app = express();
 
-// CORS Configuration - Allow frontend to make requests
-const allowedOrigins = [
-  'http://localhost:5173',  // Local development
-  'http://localhost:3000',  // Alternative local
-  process.env.FRONTEND_URL  // Production frontend (set in Render environment variables)
-].filter(Boolean);
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-};
-
 // Middleware
-app.use(cors(corsOptions));
+app.use(cors())
 app.use(express.json());  // to parse json
 app.use(express.urlencoded({extended: true}));  // to parse url-encoded data like forms
 
